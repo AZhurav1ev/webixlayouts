@@ -9,13 +9,42 @@ const small_film_set = [
     { id: 6, title: "12 Angry Men", year: 1957, votes: 164558, rating: 8.9, rank: 6, category: "Western" }
 ]
 
+function saveItem() {
+    const validationResult = $$("form").validate();
+    if (validationResult) {
+        const item_data = $$("form").getValues();
+        $$("table").add(item_data);
+        $$("form").clear();
+        webix.message({
+            text: `Validation is successful`,
+            type: "success",
+            expire: 1000
+        });
+    }
+}
+
+function clearValidation() {
+    webix.confirm(`Do you realy want to clear validation?`)
+        .then(() => $$("form").clearValidation())
+        .then(() => $$("form").clear())
+}
+
 const toolbar = {
     view: "toolbar",
     css: "webix_dark",
     elements: [
         { view: "label", label: "My app" },
         {},
-        { view: "button", label: "Profile", autowidth: true, css: "webix_transparent", type: "icon", icon: "wxi-user" }
+        {
+            view: "button",
+            id: "btn_save",
+            label: "Profile",
+            autowidth: true,
+            css: "webix_transparent",
+            type: "icon",
+            icon: "wxi-user",
+            popup: "profile_menu"
+        }
     ]
 }
 
@@ -36,13 +65,14 @@ const list = {
             css: "lightgray green center",
             height: 30,
             width: 120,
-            template:`<span class='webix_icon wxi-check'></span>Connected`
-        } 
+            template: `<span class='webix_icon wxi-check'></span>Connected`
+        }
     ]
 }
 
 const datatable = {
     view: "datatable",
+    id: "table",
     data: small_film_set,
     autoConfig: true,
     scroll: "y"
@@ -53,25 +83,38 @@ const form = {
     rows: [
         {
             view: "form",
-            width: 250,
+            id: "form",
+            width: 350,
             elements: [
                 {
                     rows: [
                         { template: "EDIT FILMS", type: "section" },
-                        { view: "text", label: "Title" },
-                        { view: "text", label: "Year" },
-                        { view: "text", label: "Rating" },
-                        { view: "text", label: "Votes" },
+                        { view: "text", label: "Title", name: "title", invalidMessage: "Title can not be empty" },
+                        { view: "text", label: "Year", name: "year", invalidMessage: "Year should be between 1970 and current" },
+                        { view: "text", label: "Rating", name: "rating", invalidMessage: "Rating cannot be empty or 0" },
+                        { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 100000" },
                         {
                             cols: [
-                                { view: "button", label: "Add new", width: 100, css: "webix_primary" },
+                                { view: "button", label: "Add new", width: 100, css: "webix_primary", click: saveItem },
                                 {},
-                                { view: "button", label: "Clear", width: 100 },
+                                { view: "button", label: "Clear", width: 100, click: clearValidation },
                             ]
                         }
                     ]
                 }
-            ]
+            ],
+            rules: {
+                title: webix.rules.isNotEmpty,
+                year: function (value) {
+                    return value > 1970 && value < new Date().getFullYear();
+                },
+                votes: function (value) {
+                    return value < 100000;
+                },
+                rating: function (value) {
+                    return value != 0 && value != '';
+                }
+            }
         },
         {}
     ]
@@ -97,6 +140,21 @@ webix.ready(function () {
             },
             footer,
         ]
+    })
+
+    webix.ui({
+        view: "popup",
+        id: "profile_menu",
+        width: 200,
+        body: {
+            view: "list",
+            data: [
+                { id: 1, name: "Settings" },
+                { id: 2, name: "Log Out" }
+            ],
+            template: "#name#",
+            autoheight: true,
+        }
     })
 })
 
