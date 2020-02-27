@@ -20,19 +20,24 @@ const toolbar = {
 }
 
 const list = {
-    css: "lightgraylist",
+    css: "lightgray",
     type: "clean",
     rows: [
         {
             view: "list",
-            css: "lightgraylist",
+            css: "lightgray",
             id: "mylist",
             autowidth: true,
             scroll: false,
             data: ["Dashboard", "Users", "Products", "Locations"]
         },
         {},
-        { view: "button", label: "Connected", autowidth: true, css: "greenbutton", type: "icon", icon: "wxi-check" }
+        {
+            css: "lightgray green center",
+            height: 30,
+            width: 120,
+            template:`<span class='webix_icon wxi-check'></span>Connected`
+        } 
     ]
 }
 
@@ -78,7 +83,6 @@ const footer = {
     template: `The software is provided by <a href="https://webix.com">https://webix.com</a>. All rights reserved &copy`
 }
 
-
 webix.ready(function () {
     webix.ui({
         rows: [
@@ -95,3 +99,4 @@ webix.ready(function () {
         ]
     })
 })
+
