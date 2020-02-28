@@ -24,9 +24,11 @@ function saveItem() {
 }
 
 function clearValidation() {
-    webix.confirm(`Do you realy want to clear validation?`)
-        .then(() => $$("form").clearValidation())
-        .then(() => $$("form").clear())
+    webix.confirm(`Do you realy want to clear form?`)
+        .then(() => {
+            $$("form").clearValidation();
+            $$("form").clear();
+        })
 }
 
 const toolbar = {
@@ -90,9 +92,9 @@ const form = {
                     rows: [
                         { template: "EDIT FILMS", type: "section" },
                         { view: "text", label: "Title", name: "title", invalidMessage: "Title can not be empty" },
-                        { view: "text", label: "Year", name: "year", invalidMessage: "Year should be between 1970 and current" },
-                        { view: "text", label: "Rating", name: "rating", invalidMessage: "Rating cannot be empty or 0" },
-                        { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 100000" },
+                        { view: "text", label: "Year", name: "year", invalidMessage: "Year should be between 1970 and current", type: "number" },
+                        { view: "text", label: "Rating", name: "rating", invalidMessage: "Rating cannot be empty or 0", type: "number" },
+                        { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 100000", type: "number" },
                         {
                             cols: [
                                 { view: "button", label: "Add new", width: 100, css: "webix_primary", click: saveItem },
@@ -112,7 +114,7 @@ const form = {
                     return value < 100000;
                 },
                 rating: function (value) {
-                    return value != 0 && value != '';
+                    return +value;
                 }
             }
         },
