@@ -3,18 +3,19 @@
 function saveItem() {
     const form = $$("form");
     const table = $$("table");
-    const item_data = form.getValues();
-    if (item_data.id) {
-        table.updateItem(item_data.id, item_data);
-        form.clear();
-        webix.message({
-            text: `Movie is updated `,
-            type: "success",
-            expire: 1000
-        });
-    } else {
-        const validationResult = form.validate();
-        if (validationResult) {
+
+    if (form.validate()) {
+        const item_data = form.getValues();
+        if (item_data.id) {
+            table.updateItem(item_data.id, item_data);
+            form.clear();
+            table.unselect();
+            webix.message({
+                text: `Movie is updated `,
+                type: "success",
+                expire: 1000
+            });
+        } else {
             table.add(item_data);
             form.clear();
             webix.message({
@@ -99,15 +100,25 @@ const datatable = {
     },
     columns: [
         { id: "rank", header: "", width: 50, css: "gray" },
-        { id: "title", header: ["Film Title", { content: "textFilter" }], fillspace: true },
-        { id: "year", header: ["Released", { content: "numberFilter" }] },
-        { id: "votes", header: ["Votes", { content: "textFilter" }] },
-        { id: "rating", header: ["Rating", { content: "textFilter" }] },
+        { id: "title", header: ["Film Title", { content: "textFilter" }], fillspace: true, sort: "string" },
+        { id: "year", header: ["Released", { content: "numberFilter" }], sort: "int" },
+        { id: "votes", header: ["Votes", { content: "textFilter" }], sort: "int" },
+        { id: "rating", header: ["Rating", { content: "textFilter" }], sort: "int" },
         { id: "deleteIcon", header: "", template: "{common.trashIcon()}" }
     ],
     onClick: {
         "wxi-trash": function (e, id) {
             this.remove(id.row)
+        }
+    },
+    scheme: {
+        $init: function (obj) {
+            if (obj.votes.includes(",")) {
+                obj.votes = obj.votes.replace(",", ".") * 1000;
+            }
+            if (obj.rating.includes(",")) {
+                obj.rating = obj.rating.replace(",", ".");
+            }
         }
     }
 }
@@ -126,7 +137,7 @@ const form = {
                         { view: "text", label: "Title", name: "title", invalidMessage: "Title can not be empty" },
                         { view: "text", label: "Year", name: "year", invalidMessage: "Year should be between 1970 and current", type: "number" },
                         { view: "text", label: "Rating", name: "rating", invalidMessage: "Rating cannot be empty or 0" },
-                        { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 100000" },
+                        { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 1000000" },
                         {
                             cols: [
                                 { view: "button", label: "Add new", width: 100, css: "webix_primary", click: saveItem },
@@ -140,14 +151,15 @@ const form = {
             rules: {
                 title: webix.rules.isNotEmpty,
                 year: function (value) {
-                    return value > 1970 && value < new Date().getFullYear();
-                },
-                votes: function (value) {
-                    return value < 100000;
+                    const currentYear = new Date().getFullYear()
+                    return value > 1970 && value < currentYear;
                 },
                 rating: function (value) {
                     return +value;
-                }
+                },
+                votes: function (value) {
+                    return value < 1000000;
+                },
             }
         },
         {}
@@ -173,7 +185,7 @@ const userList = {
                         onTimedKeyPress: function () {
                             const value = this.getValue().toLowerCase();
                             $$("user_list").filter(function (obj) {
-                                return obj.country.toLowerCase().indexOf(value) !== -1;
+                                return obj.country.toLowerCase().indexOf(value) !== -1 || obj.name.toLowerCase().indexOf(value) !== -1
                             })
                         }
                     }
@@ -223,7 +235,7 @@ const userList = {
 
 const ageChart = {
     view: "chart",
-    type: "bar", 
+    type: "bar",
     barWidth: 40,
     value: "#age#",
     xAxis: {
@@ -242,7 +254,7 @@ const treeTable = {
         { id: "price", header: "Price", width: 200 }
     ],
     autowidth: true,
-    select: true,
+    select: "cell",
     scroll: "y",
     url: "data/products.js",
     ready: function () {
