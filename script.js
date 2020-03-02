@@ -93,7 +93,7 @@ const datatable = {
     autoConfig: true,
     scroll: "y",
     select: true,
-    hover: "myhover",
+    hover: "datatable_hover",
     on: {
         onAfterSelect: dataToForm
     },
