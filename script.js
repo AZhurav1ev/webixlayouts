@@ -8,7 +8,6 @@ function saveItem() {
         const item_data = form.getValues();
         if (item_data.id) {
             table.updateItem(item_data.id, item_data);
-            form.clear();
             table.unselect();
             webix.message({
                 text: `Movie is updated `,
@@ -17,13 +16,13 @@ function saveItem() {
             });
         } else {
             table.add(item_data);
-            form.clear();
             webix.message({
                 text: `New movie added`,
                 type: "success",
                 expire: 1000
             });
         }
+        form.clear();
     }
 }
 
@@ -114,7 +113,7 @@ const datatable = {
     scheme: {
         $init: function (obj) {
             if (obj.votes.includes(",")) {
-                obj.votes = obj.votes.replace(",", ".") * 1000;
+                obj.votes = obj.votes.replace(",", "");
             }
             if (obj.rating.includes(",")) {
                 obj.rating = obj.rating.replace(",", ".");
