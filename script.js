@@ -42,16 +42,11 @@ function randomInteger(min, max) {
 function addRandomUser() {
     const countries = ["Germany", "USA", "Canada", "Russia", "China", "France", "Italy", "Spain"];
     const names = ["John", "Bill", "Jacob", "William", "Liam", "Michael", "Alexander", "Noah"];
-    // const newUser = {
-    //     name: names[randomInteger(0, countries.length - 1)],
-    //     country: countries[randomInteger(0, names.length - 1)],
-    //     age: randomInteger(1, 100)
-    //}
     $$("user_list").add({
         name: names[randomInteger(0, countries.length - 1)],
         country: countries[randomInteger(0, names.length - 1)],
         age: randomInteger(1, 100)
-    })
+    }, 0)
 }
 
 const toolbar = {
@@ -356,6 +351,7 @@ webix.ready(function () {
     })
 
     $$("form").bind("table");
+
     $$("chart_table").sync($$("user_list"), function () {
         this.group({
             by: "country",
