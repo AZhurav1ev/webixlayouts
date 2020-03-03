@@ -7,15 +7,15 @@ function saveItem() {
     if (form.validate()) {
         const item_data = form.getValues();
         if (item_data.id) {
-            table.updateItem(item_data.id, item_data);
+            form.save();
             table.unselect();
             webix.message({
-                text: `Movie is updated `,
+                text: `Movie is updated`,
                 type: "success",
                 expire: 1000
             });
         } else {
-            table.add(item_data);
+            form.save();
             webix.message({
                 text: `New movie added`,
                 type: "success",
@@ -34,9 +34,19 @@ function clearValidation() {
         })
 }
 
-function dataToForm(id) {
-    const value = $$("table").getItem(id);
-    $$("form").setValues(value);
+function randomInteger(min, max) {
+    let rand = min + Math.random() * (max + 1 - min);
+    return Math.floor(rand);
+}
+
+function addRandomUser() {
+    const countries = ["Germany", "USA", "Canada", "Russia", "China", "France", "Italy", "Spain"];
+    const names = ["John", "Bill", "Jacob", "William", "Liam", "Michael", "Alexander", "Noah"];
+    $$("user_list").add({
+        name: names[randomInteger(0, countries.length - 1)],
+        country: countries[randomInteger(0, names.length - 1)],
+        age: randomInteger(1, 100)
+    }, 0)
 }
 
 const toolbar = {
@@ -86,6 +96,22 @@ const list = {
     ]
 }
 
+const tabbar = {
+    view: "tabbar",
+    id: "tab_bar",
+    on: {
+        onAfterTabClick: function () {
+            $$("table").filterByAll()
+        }
+    },
+    options: [
+        { id: "all", value: "All" },
+        { id: "old", value: "Old" },
+        { id: "modern", value: "Modern" },
+        { id: "new", value: "New" }
+    ]
+}
+
 const datatable = {
     view: "datatable",
     id: "table",
@@ -94,15 +120,13 @@ const datatable = {
     scroll: "y",
     select: true,
     hover: "datatable_hover",
-    on: {
-        onAfterSelect: dataToForm
-    },
     columns: [
         { id: "rank", header: "", width: 50, css: "gray" },
         { id: "title", header: ["Film Title", { content: "textFilter" }], fillspace: true, sort: "string" },
-        { id: "year", header: ["Released", { content: "numberFilter" }], sort: "int" },
+        { id: "category", header: ["Category", { content: "selectFilter" }], options: "data/categories.js" },
         { id: "votes", header: ["Votes", { content: "textFilter" }], sort: "int" },
         { id: "rating", header: ["Rating", { content: "textFilter" }], sort: "int" },
+        { id: "year", header: "Released" },
         { id: "deleteIcon", header: "", template: "{common.trashIcon()}" }
     ],
     onClick: {
@@ -112,6 +136,9 @@ const datatable = {
     },
     scheme: {
         $init: function (obj) {
+            if (!obj.category) {
+                obj.category = randomInteger(1, 4);
+            }
             if (obj.votes.includes(",")) {
                 obj.votes = obj.votes.replace(",", "");
             }
@@ -139,7 +166,7 @@ const form = {
                         { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 1000000" },
                         {
                             cols: [
-                                { view: "button", label: "Add new", width: 100, css: "webix_primary", click: saveItem },
+                                { view: "button", label: "Save", width: 100, css: "webix_primary", click: saveItem },
                                 {},
                                 { view: "button", label: "Clear", width: 100, click: clearValidation },
                             ]
@@ -170,6 +197,10 @@ const footer = {
     height: 40,
     template: `The software is provided by <a href="https://webix.com">https://webix.com</a>. All rights reserved &copy`
 }
+
+webix.protoUI({
+    name: "editlist"
+}, webix.EditAbility, webix.ui.list);
 
 const userList = {
     rows: [
@@ -209,39 +240,59 @@ const userList = {
                         $$("user_list").sort("#age#", "desc")
                     }
                 },
+                {
+                    view: "button",
+                    label: "Add user",
+                    id: "btn_add_user",
+                    autowidth: true,
+                    css: "webix_primary",
+                    click: addRandomUser
+                },
             ]
         },
         {
-            view: "list",
+            view: "editlist",
+            editable: true,
+            editor: "text",
+            editValue: "name",
             id: "user_list",
             template: `#name# from #country#, age: #age#. <span class="webix_icon wxi-close right"></span>`,
             url: "data/users.js",
             autowidth: true,
             select: true,
+            on: {
+                onBeforeEditStop: function (field) {
+                    if (field.value === "") {
+                        return false;
+                    }
+                }
+            },
             onClick: {
                 "wxi-close": function (e, id) {
                     this.remove(id)
                 }
             },
-            ready: function () {
-                const items = Object.values(this.data.pull).slice(0, 5);
-                items.forEach(e => e.$css = "gray");
+            scheme: {
+                $init: function (obj) {
+                    if (obj.age < 26) obj.$css = "yellow"
+                }
             }
 
         }
     ]
 }
 
-const ageChart = {
+const chart = {
     view: "chart",
+    id: "chart_table",
     type: "bar",
     barWidth: 40,
-    value: "#age#",
+    value: "#name#",
     xAxis: {
-        template: "#age#",
-        title: "Age"
+        template: "#country#",
+        title: "Country"
     },
-    url: "data/users.js"
+    yAxis: {}
 }
 
 const treeTable = {
@@ -249,10 +300,15 @@ const treeTable = {
     id: "price_tree",
     columns: [
         { id: "id", header: "", width: 50 },
-        { id: "title", header: "Title", template: "{common.treetable()} #title#", width: 200 },
-        { id: "price", header: "Price", width: 200 }
+        { id: "title", editor: "text", header: "Title", template: "{common.treetable()} #title#", width: 200 },
+        { id: "price", editor: "text", header: "Price", width: 200 }
     ],
+    rules: {
+        "title": webix.rules.isNotEmpty,
+        "price": webix.rules.isNumber
+    },
     autowidth: true,
+    editable: true,
     select: "cell",
     scroll: "y",
     url: "data/products.js",
@@ -263,8 +319,8 @@ const treeTable = {
 
 const main = {
     cells: [
-        { id: "Dashboard", cols: [datatable, form] },
-        { id: "Users", rows: [userList, ageChart] },
+        { id: "Dashboard", cols: [{ rows: [tabbar, datatable] }, form] },
+        { id: "Users", rows: [userList, chart] },
         { id: "Products", rows: [treeTable] },
         { id: "Admin", template: "Admin view" }
     ]
@@ -293,5 +349,43 @@ webix.ready(function () {
             autoheight: true,
         }
     })
+
+    $$("form").bind("table");
+
+    $$("chart_table").sync($$("user_list"), function () {
+        this.group({
+            by: "country",
+            map: {
+                name: ["country", "count"]
+            }
+        })
+    });
+
+    $$("table").registerFilter(
+        $$("tab_bar"),
+        {
+            columnId: "year", compare: function (year, filter) {
+                const currentYear = new Date().getFullYear();
+                switch (filter) {
+                    case "old":
+                        return year < 1950;
+                    case "modern":
+                        return year > 1950 && year < 1990;
+                    case "new":
+                        return year > 1990 && year < currentYear;
+                    default:
+                        return true;
+                }
+            }
+        },
+        {
+            getValue: function (node) {
+                return node.getValue();
+            },
+            setValue: function (node, value) {
+                node.setValue(value);
+            }
+        }
+    );
 })
 
