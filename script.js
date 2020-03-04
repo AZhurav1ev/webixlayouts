@@ -277,14 +277,14 @@ const userList = {
             },
             onClick: {
                 "wxi-close": function (e, id) {
-                    this.remove(id)
+                    userCollection.remove(id)
                 }
             },
-            scheme: {
-                $init: function (obj) {
-                    if (obj.age < 26) obj.$css = "yellow"
-                }
-            }
+            // scheme: {
+            //     $init: function (obj) {
+            //         if (obj.age < 26) obj.$css = "yellow"
+            //     }
+            // }
 
         }
     ]
@@ -422,7 +422,10 @@ webix.ready(function () {
 
     $$("categoriesTable").sync(categories);
 
-    $$("user_list").sync(userCollection);
+    $$("user_list").sync(userCollection, function () {
+        this.filter(obj => obj.age < 26).name
+    });
+
 
     $$("chart_table").sync(userCollection, function () {
         this.group({
