@@ -1,5 +1,18 @@
 "use strict"
 
+const userCollection = new webix.DataCollection({
+    url: "data/users.js",
+    scheme: {
+        $init: function (obj) {
+            if (obj.age < 26) obj.$css = "yellow"
+        }
+    }
+})
+
+const categories = new webix.DataCollection({
+    url: "data/categories.js"
+})
+
 function saveItem() {
     const form = $$("form");
     const table = $$("table");
@@ -42,7 +55,7 @@ function randomInteger(min, max) {
 function addRandomUser() {
     const countries = ["Germany", "USA", "Canada", "Russia", "China", "France", "Italy", "Spain"];
     const names = ["John", "Bill", "Jacob", "William", "Liam", "Michael", "Alexander", "Noah"];
-    $$("user_list").add({
+    userCollection.add({
         name: names[randomInteger(0, countries.length - 1)],
         country: countries[randomInteger(0, names.length - 1)],
         age: randomInteger(1, 100)
@@ -81,9 +94,12 @@ const list = {
             select: true,
             data: ["Dashboard", "Users", "Products", "Admin"],
             on: {
-                onAfterSelect: function (id) {
+                onItemClick: function (id) {
                     $$(id).show();
                 }
+            },
+            ready: function(){
+                this.select(this.getFirstId());
             }
         },
         {},
@@ -123,7 +139,7 @@ const datatable = {
     columns: [
         { id: "rank", header: "", width: 50, css: "gray" },
         { id: "title", header: ["Film Title", { content: "textFilter" }], fillspace: true, sort: "string" },
-        { id: "category", header: ["Category", { content: "selectFilter" }], options: "data/categories.js" },
+        { id: "category", header: ["Category", { content: "selectFilter" }], options: categories },
         { id: "votes", header: ["Votes", { content: "textFilter" }], sort: "int" },
         { id: "rating", header: ["Rating", { content: "textFilter" }], sort: "int" },
         { id: "year", header: "Released" },
@@ -164,6 +180,7 @@ const form = {
                         { view: "text", label: "Year", name: "year", invalidMessage: "Year should be between 1970 and current", type: "number" },
                         { view: "text", label: "Rating", name: "rating", invalidMessage: "Rating cannot be empty or 0" },
                         { view: "text", label: "Votes", name: "votes", invalidMessage: "Votes must be less than 1000000" },
+                        { view: "richselect", label: "Genre", name: "category", value: 1, options: categories },
                         {
                             cols: [
                                 { view: "button", label: "Save", width: 100, css: "webix_primary", click: saveItem },
@@ -257,7 +274,6 @@ const userList = {
             editValue: "name",
             id: "user_list",
             template: `#name# from #country#, age: #age#. <span class="webix_icon wxi-close right"></span>`,
-            url: "data/users.js",
             autowidth: true,
             select: true,
             on: {
@@ -269,14 +285,9 @@ const userList = {
             },
             onClick: {
                 "wxi-close": function (e, id) {
-                    this.remove(id)
+                    userCollection.remove(id)
                 }
             },
-            scheme: {
-                $init: function (obj) {
-                    if (obj.age < 26) obj.$css = "yellow"
-                }
-            }
 
         }
     ]
@@ -301,13 +312,12 @@ const treeTable = {
     columns: [
         { id: "id", header: "", width: 50 },
         { id: "title", editor: "text", header: "Title", template: "{common.treetable()} #title#", width: 200 },
-        { id: "price", editor: "text", header: "Price", width: 200 }
+        { id: "price", editor: "text", header: "Price", width: 200, fillspace:true }
     ],
     rules: {
         "title": webix.rules.isNotEmpty,
         "price": webix.rules.isNumber
     },
-    autowidth: true,
     editable: true,
     select: "cell",
     scroll: "y",
@@ -317,12 +327,69 @@ const treeTable = {
     }
 }
 
+const categoriesTable = {
+    rows: [
+        {
+            view: "toolbar",
+            elements: [
+                {
+                    view: "text",
+                    id: "category_input",
+                    placeholder: "Category name",
+                },
+                {
+                    view: "button",
+                    label: "Add Category",
+                    autowidth: true,
+                    css: "webix_primary",
+                    click: function () {
+                        const genre = $$("category_input").getValue();
+                        if (genre === "") {
+                            webix.message(`Categoty should not be empty`);
+                        } else {
+                            categories.add({ value: genre }, 0);
+                            webix.message(`New category added`);
+                            $$("category_input").setValue("");
+                        }
+                    }
+                },
+                {
+                    view: "button",
+                    label: "Delete Category",
+                    autowidth: true,
+                    css: "webix_primary",
+                    click: function () {
+                        const id = $$("categoriesTable").getSelectedId();
+                        if (id) {
+                            categories.remove(id);
+                            webix.message(`Category deleted`);
+                        }
+                    }
+                },
+            ]
+        },
+        {
+            view: "datatable",
+            id: "categoriesTable",
+            scroll: "y",
+            editable: true,
+            editaction: "dblclick",
+            select: true,
+            hover: "datatable_hover",
+            columns: [
+                { id: "value", header: "Genre", width: 200, sort: "int", editor: "text", fillspace: true }
+            ],
+
+        }
+    ]
+}
+
 const main = {
     cells: [
         { id: "Dashboard", cols: [{ rows: [tabbar, datatable] }, form] },
         { id: "Users", rows: [userList, chart] },
         { id: "Products", rows: [treeTable] },
-        { id: "Admin", template: "Admin view" }
+        { id: "Admin", rows: [categoriesTable] }
     ]
 }
 
@@ -352,7 +419,11 @@ webix.ready(function () {
 
     $$("form").bind("table");
 
-    $$("chart_table").sync($$("user_list"), function () {
+    $$("categoriesTable").sync(categories);
+
+    $$("user_list").sync(userCollection)
+
+    $$("chart_table").sync(userCollection, function () {
         this.group({
             by: "country",
             map: {
