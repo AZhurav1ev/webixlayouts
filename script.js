@@ -1,7 +1,12 @@
 "use strict"
 
 const userCollection = new webix.DataCollection({
-    url: "data/users.js"
+    url: "data/users.js",
+    scheme: {
+        $init: function (obj) {
+            if (obj.age < 26) obj.$css = "yellow"
+        }
+    }
 })
 
 const categories = new webix.DataCollection({
@@ -89,9 +94,12 @@ const list = {
             select: true,
             data: ["Dashboard", "Users", "Products", "Admin"],
             on: {
-                onAfterSelect: function (id) {
+                onItemClick: function (id) {
                     $$(id).show();
                 }
+            },
+            ready: function(){
+                this.select(this.getFirstId());
             }
         },
         {},
@@ -280,11 +288,6 @@ const userList = {
                     userCollection.remove(id)
                 }
             },
-            scheme: {
-                $init: function (obj) {
-                    if (obj.age < 26) obj.$css = "yellow"
-                }
-            }
 
         }
     ]
@@ -309,13 +312,12 @@ const treeTable = {
     columns: [
         { id: "id", header: "", width: 50 },
         { id: "title", editor: "text", header: "Title", template: "{common.treetable()} #title#", width: 200 },
-        { id: "price", editor: "text", header: "Price", width: 200 }
+        { id: "price", editor: "text", header: "Price", width: 200, fillspace:true }
     ],
     rules: {
         "title": webix.rules.isNotEmpty,
         "price": webix.rules.isNumber
     },
-    autowidth: true,
     editable: true,
     select: "cell",
     scroll: "y",
@@ -338,7 +340,6 @@ const categoriesTable = {
                 {
                     view: "button",
                     label: "Add Category",
-                    id: "btn_add_category",
                     autowidth: true,
                     css: "webix_primary",
                     click: function () {
@@ -355,7 +356,6 @@ const categoriesTable = {
                 {
                     view: "button",
                     label: "Delete Category",
-                    id: "btn_delete_category",
                     autowidth: true,
                     css: "webix_primary",
                     click: function () {
@@ -371,14 +371,13 @@ const categoriesTable = {
         {
             view: "datatable",
             id: "categoriesTable",
-            autoConfig: true,
             scroll: "y",
             editable: true,
             editaction: "dblclick",
             select: true,
             hover: "datatable_hover",
             columns: [
-                { id: "value", header: "Genre", width: 200, sort: "int", editor: "text" }
+                { id: "value", header: "Genre", width: 200, sort: "int", editor: "text", fillspace: true }
             ],
 
         }
