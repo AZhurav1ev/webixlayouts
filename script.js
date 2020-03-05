@@ -92,7 +92,7 @@ const list = {
             autowidth: true,
             scroll: false,
             select: true,
-            data: ["Dashboard", "Users", "Products", "Admin"],
+            data: ["Dashboard", "Users", "Products", "Admin", "Form"],
             on: {
                 onItemClick: function (id) {
                     $$(id).show();
@@ -219,80 +219,6 @@ webix.protoUI({
     name: "editlist"
 }, webix.EditAbility, webix.ui.list);
 
-const userList = {
-    rows: [
-        {
-            view: "toolbar",
-            elements: [
-                {
-                    view: "text",
-                    id: "title_filter_input",
-                    placeholder: "Country name",
-                    on: {
-                        onTimedKeyPress: function () {
-                            const value = this.getValue().toLowerCase();
-                            $$("user_list").filter(function (obj) {
-                                return obj.country.toLowerCase().indexOf(value) !== -1 || obj.name.toLowerCase().indexOf(value) !== -1
-                            })
-                        }
-                    }
-                },
-                {
-                    view: "button",
-                    label: "Sort asc",
-                    id: "btn_sort_asc",
-                    autowidth: true,
-                    css: "webix_primary",
-                    click: function () {
-                        $$("user_list").sort("#age#", "asc")
-                    }
-                },
-                {
-                    view: "button",
-                    label: "Sort desc",
-                    id: "btn_sort_desc",
-                    autowidth: true,
-                    css: "webix_primary",
-                    click: function () {
-                        $$("user_list").sort("#age#", "desc")
-                    }
-                },
-                {
-                    view: "button",
-                    label: "Add user",
-                    id: "btn_add_user",
-                    autowidth: true,
-                    css: "webix_primary",
-                    click: addRandomUser
-                },
-            ]
-        },
-        {
-            view: "editlist",
-            editable: true,
-            editor: "text",
-            editValue: "name",
-            id: "user_list",
-            template: `#name# from #country#, age: #age#. <span class="webix_icon wxi-close right"></span>`,
-            autowidth: true,
-            select: true,
-            on: {
-                onBeforeEditStop: function (field) {
-                    if (field.value === "") {
-                        return false;
-                    }
-                }
-            },
-            onClick: {
-                "wxi-close": function (e, id) {
-                    userCollection.remove(id)
-                }
-            },
-
-        }
-    ]
-}
-
 const chart = {
     view: "chart",
     id: "chart_table",
@@ -383,80 +309,4 @@ const categoriesTable = {
         }
     ]
 }
-
-const main = {
-    cells: [
-        { id: "Dashboard", cols: [{ rows: [tabbar, datatable] }, form] },
-        { id: "Users", rows: [userList, chart] },
-        { id: "Products", rows: [treeTable] },
-        { id: "Admin", rows: [categoriesTable] }
-    ]
-}
-
-webix.ready(function () {
-    webix.ui({
-        rows: [
-            toolbar,
-            { cols: [list, { view: "resizer" }, main] },
-            footer,
-        ]
-    })
-
-    webix.ui({
-        view: "popup",
-        id: "profile_menu",
-        width: 200,
-        body: {
-            view: "list",
-            data: [
-                { id: 1, name: "Settings" },
-                { id: 2, name: "Log Out" }
-            ],
-            template: "#name#",
-            autoheight: true,
-        }
-    })
-
-    $$("form").bind("table");
-
-    $$("categoriesTable").sync(categories);
-
-    $$("user_list").sync(userCollection)
-
-    $$("chart_table").sync(userCollection, function () {
-        this.group({
-            by: "country",
-            map: {
-                name: ["country", "count"]
-            }
-        })
-    });
-
-    $$("table").registerFilter(
-        $$("tab_bar"),
-        {
-            columnId: "year", compare: function (year, filter) {
-                const currentYear = new Date().getFullYear();
-                switch (filter) {
-                    case "old":
-                        return year < 1950;
-                    case "modern":
-                        return year > 1950 && year < 1990;
-                    case "new":
-                        return year > 1990 && year < currentYear;
-                    default:
-                        return true;
-                }
-            }
-        },
-        {
-            getValue: function (node) {
-                return node.getValue();
-            },
-            setValue: function (node, value) {
-                node.setValue(value);
-            }
-        }
-    );
-})
 
